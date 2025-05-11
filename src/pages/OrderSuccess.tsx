@@ -11,8 +11,8 @@ const OrderSuccess = () => {
   const location = useLocation();
   const paymentData = location.state || {};
   
-  const orderNumber = `MAD-${Math.floor(100000 + Math.random() * 900000)}`;
-  const orderDate = new Date().toLocaleDateString();
+  const transactionId = `MAD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const transactionDate = new Date().toLocaleDateString();
   const paymentAmount = paymentData.paymentAmount ? parseFloat(paymentData.paymentAmount).toFixed(2) : "0.00";
   const paymentMethod = paymentData.paymentMethod || "Airtel Money";
 
@@ -35,8 +35,8 @@ const OrderSuccess = () => {
           <CardContent className="space-y-6 pt-6">
             <div className="text-center">
               <p className="text-gray-600">We've sent a payment confirmation to your email address.</p>
-              <p className="mt-2 text-sm">Transaction Date: <span className="font-medium">{orderDate}</span></p>
-              <p className="text-sm">Transaction ID: <span className="font-medium">{orderNumber}</span></p>
+              <p className="mt-2 text-sm">Transaction Date: <span className="font-medium">{transactionDate}</span></p>
+              <p className="text-sm">Transaction ID: <span className="font-medium">{transactionId}</span></p>
             </div>
 
             <Separator />
@@ -92,7 +92,7 @@ const OrderSuccess = () => {
               className="w-full sm:w-auto"
               onClick={() => navigate("/dashboard")}
             >
-              Go to Dashboard
+              Back to Dashboard
             </Button>
             <Button 
               className="w-full sm:w-auto bg-purple-700 hover:bg-purple-800"

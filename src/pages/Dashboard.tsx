@@ -2,51 +2,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
-// Sample pet products data
-const petProducts = [
-  {
-    id: "1",
-    name: "Premium Dog Food",
-    description: "High-quality nutrition for your furry friend",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZG9nJTIwZm9vZHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-    badge: "Popular"
-  },
-  {
-    id: "2",
-    name: "Interactive Cat Toy",
-    description: "Keep your cat entertained for hours",
-    price: 24.99,
-    image: "https://images.unsplash.com/photo-1526336179256-1347bdb255ee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2F0JTIwdG95fGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60",
-    badge: "New"
-  },
-  {
-    id: "3",
-    name: "Comfortable Pet Bed",
-    description: "Soft and cozy resting place for your pet",
-    price: 59.99,
-    image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGV0JTIwYmVkfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: "4",
-    name: "Pet Grooming Kit",
-    description: "Complete set for keeping your pet clean",
-    price: 34.99,
-    image: "https://images.unsplash.com/photo-1591946614720-90a587da4a36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8cGV0JTIwZ3Jvb21pbmd8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60"
-  }
-];
+import { IndianRupee } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const { addItem, totalItems } = useCart();
 
   const handleLogout = async () => {
     try {
@@ -57,17 +21,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddToCart = (product: any) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.image
-    });
-  };
-
-  const handleCheckout = () => {
+  const handleMakePayment = () => {
     navigate("/checkout");
   };
 
@@ -78,27 +32,9 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-madapet-primary">MADAPET-PAYMENT</h1>
+              <h1 className="text-2xl font-bold text-purple-700">MADAPET-PAYMENT</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                className="flex items-center" 
-                onClick={() => navigate("/checkout")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                Cart
-                {totalItems > 0 && (
-                  <Badge variant="destructive" className="ml-1">
-                    {totalItems}
-                  </Badge>
-                )}
-              </Button>
-              
               <div className="flex items-center space-x-2">
                 <Avatar>
                   <AvatarImage src={currentUser?.photoURL || undefined} />
@@ -120,64 +56,66 @@ const Dashboard = () => {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold mb-6">Welcome, {currentUser?.displayName || "Pet Lover"}!</h2>
+        <h2 className="text-2xl font-bold mb-6">Welcome, {currentUser?.displayName || "User"}!</h2>
         
-        {/* Featured products */}
+        {/* Payment Section */}
         <section className="mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold">Featured Products</h3>
-            <Button variant="link" className="text-madapet-primary">View all</Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {petProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden transition-shadow duration-200 hover:shadow-lg">
-                <div className="relative h-48">
-                  <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover"
-                  />
-                  {product.badge && (
-                    <Badge className="absolute top-2 right-2 bg-madapet-primary">
-                      {product.badge}
-                    </Badge>
-                  )}
+          <Card className="bg-white shadow-md overflow-hidden border-purple-200">
+            <CardHeader className="bg-purple-700 text-white">
+              <CardTitle className="text-xl flex items-center">
+                <IndianRupee className="h-5 w-5 mr-2" />
+                Make a Payment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Ready to make a quick and secure payment? Use our Airtel Money integration for fast and reliable transactions.
+                </p>
+                <div className="bg-purple-50 p-4 rounded-md">
+                  <h3 className="font-medium text-purple-800 mb-2">Why choose Airtel Money?</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-purple-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Fast and secure transactions</span>
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-purple-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>End-to-end encryption</span>
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-purple-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>24/7 customer support</span>
+                    </li>
+                  </ul>
                 </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <p className="text-sm text-gray-600">{product.description}</p>
-                  <p className="mt-2 text-lg font-bold text-madapet-secondary">
-                    ${product.price.toFixed(2)}
-                  </p>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Button 
-                    className="w-full bg-madapet-primary hover:bg-madapet-secondary"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    Add to Cart
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-gray-50 px-6 py-4">
+              <Button 
+                onClick={handleMakePayment} 
+                className="w-full bg-purple-700 hover:bg-purple-800"
+              >
+                Proceed to Payment
+              </Button>
+            </CardFooter>
+          </Card>
         </section>
         
-        {/* Call to action */}
-        <section className="bg-madapet-light rounded-lg p-6 flex flex-col md:flex-row justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold text-madapet-dark mb-2">Ready to checkout?</h3>
-            <p className="text-gray-600">Review your cart and complete your purchase.</p>
-          </div>
-          <Button 
-            className="mt-4 md:mt-0 bg-madapet-primary hover:bg-madapet-secondary"
-            onClick={handleCheckout}
-          >
-            Proceed to Checkout
-          </Button>
+        {/* Recent Transactions (placeholder) */}
+        <section>
+          <h3 className="text-xl font-semibold mb-4">Recent Transactions</h3>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-gray-500 text-center py-8">No recent transactions found.</p>
+            </CardContent>
+          </Card>
         </section>
       </main>
 
@@ -186,7 +124,7 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between">
             <div className="mb-6 md:mb-0">
-              <h3 className="font-bold text-lg text-madapet-dark mb-2">MADAPET-PAYMENT</h3>
+              <h3 className="font-bold text-lg text-purple-700 mb-2">MADAPET-PAYMENT</h3>
               <p className="text-sm text-gray-600">The best payment solution for pet lovers</p>
             </div>
             
@@ -194,25 +132,22 @@ const Dashboard = () => {
               <div>
                 <h4 className="font-semibold mb-3 text-sm">Help</h4>
                 <ul className="text-sm space-y-2">
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Contact Us</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">FAQs</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Returns</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">Contact Us</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">FAQs</a></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-semibold mb-3 text-sm">Company</h4>
                 <ul className="text-sm space-y-2">
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">About Us</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Careers</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Blog</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">About Us</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">Blog</a></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-semibold mb-3 text-sm">Legal</h4>
                 <ul className="text-sm space-y-2">
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Terms</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Privacy</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-madapet-primary">Cookies</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">Terms</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-purple-700">Privacy</a></li>
                 </ul>
               </div>
             </div>

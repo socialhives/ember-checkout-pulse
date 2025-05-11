@@ -2,34 +2,30 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import { IndianRupee } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { items, totalPrice, removeItem, updateQuantity, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [billingInfo, setBillingInfo] = useState({
     name: currentUser?.displayName || "",
     email: currentUser?.email || "",
+    phone: "",
     address: "",
     city: "",
     zipCode: "",
     country: "",
-  });
-
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiry: "",
-    cvc: "",
   });
 
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,153 +35,155 @@ const Checkout = () => {
     });
   };
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPaymentInfo({
-      ...paymentInfo,
-      [e.target.name]: e.target.value,
-    });
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers with up to 2 decimal places
+    const value = e.target.value;
+    if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
+      setPaymentAmount(value);
+    }
+  };
+
+  const validatePaymentDetails = () => {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid payment amount",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!billingInfo.name || !billingInfo.email || !billingInfo.phone) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const initiateAirtelPayment = async () => {
+    // This would be replaced with actual Airtel Payment API integration
+    console.log("Initiating Airtel payment for amount:", paymentAmount);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      navigate("/order-success", { 
+        state: { 
+          paymentAmount, 
+          paymentMethod: "Airtel Money",
+          customerName: billingInfo.name,
+          customerEmail: billingInfo.email,
+          customerPhone: billingInfo.phone
+        } 
+      });
+      setLoading(false);
+    }, 2000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (items.length === 0) {
-      alert("Your cart is empty!");
+    if (!validatePaymentDetails()) {
       return;
     }
     
     setLoading(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      clearCart();
-      navigate("/order-success");
+    try {
+      await initiateAirtelPayment();
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast({
+        title: "Payment Failed",
+        description: "An error occurred during payment processing. Please try again.",
+        variant: "destructive"
+      });
       setLoading(false);
-    }, 2000);
+    }
   };
-
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Your Cart is Empty</CardTitle>
-            <CardDescription>Add some products to your cart to checkout.</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button 
-              className="w-full bg-madapet-primary hover:bg-madapet-secondary"
-              onClick={() => navigate("/dashboard")}
-            >
-              Continue Shopping
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-madapet-primary">Checkout</h1>
+          <h1 className="text-2xl font-bold text-purple-700">MADAPET-PAYMENT</h1>
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            ← Back to Shopping
+            ← Back to Dashboard
           </Button>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Order Summary */}
+          {/* Payment Amount Card */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="border-purple-200 shadow-md">
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle className="flex items-center text-purple-800">
+                  <IndianRupee className="mr-2 h-5 w-5" />
+                  Airtel Payment
+                </CardTitle>
                 <CardDescription>
-                  {items.length} {items.length === 1 ? "item" : "items"} in your cart
+                  Enter amount and complete your payment
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4">
-                    <div className="h-16 w-16 rounded overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
+                <div className="space-y-2">
+                  <Label htmlFor="paymentAmount" className="font-medium">Payment Amount</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <IndianRupee className="h-5 w-5 text-gray-400" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">{item.name}</p>
-                      <div className="flex items-center mt-1">
-                        <button
-                          className="text-gray-500 hover:text-madapet-primary"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          -
-                        </button>
-                        <span className="mx-2 text-sm">{item.quantity}</span>
-                        <button
-                          className="text-gray-500 hover:text-madapet-primary"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="font-medium">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </span>
-                      <button
-                        className="text-xs text-red-500 hover:text-red-700 mt-1"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
+                    <Input
+                      id="paymentAmount"
+                      name="paymentAmount"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={paymentAmount}
+                      onChange={handleAmountChange}
+                      className="pl-10 text-lg font-medium"
+                      required
+                    />
                   </div>
-                ))}
+                </div>
                 
                 <Separator className="my-4" />
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span>${totalPrice.toFixed(2)}</span>
+                  <div className="flex justify-between font-medium">
+                    <span>Amount to Pay:</span>
+                    <span className="text-lg text-purple-700">
+                      ₹ {paymentAmount ? parseFloat(paymentAmount).toFixed(2) : "0.00"}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span>Free</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Taxes</span>
-                    <span>${(totalPrice * 0.1).toFixed(2)}</span>
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>${(totalPrice * 1.1).toFixed(2)}</span>
-                  </div>
+                </div>
+                
+                <div className="pt-4">
+                  <p className="text-sm text-gray-500 text-center">
+                    Secured by Airtel Payment Gateway
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
           
-          {/* Checkout Form */}
+          {/* Payment Form */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="shadow-md border-purple-200">
               <CardHeader>
-                <CardTitle>Complete Your Purchase</CardTitle>
+                <CardTitle>Complete Your Payment</CardTitle>
                 <CardDescription>
-                  Fill in your details to complete the order
+                  Fill in your details to process the payment
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Billing Information */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Billing Information</h3>
+                    <h3 className="text-lg font-medium">Customer Information</h3>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label htmlFor="name">Full Name</Label>
@@ -209,16 +207,18 @@ const Checkout = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="address">Street Address</Label>
+                        <Label htmlFor="phone">Phone Number</Label>
                         <Input
-                          id="address"
-                          name="address"
-                          value={billingInfo.address}
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          value={billingInfo.phone}
                           onChange={handleBillingChange}
+                          placeholder="e.g., +91 9876543210"
                           required
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="city">City</Label>
                           <Input
@@ -226,29 +226,17 @@ const Checkout = () => {
                             name="city"
                             value={billingInfo.city}
                             onChange={handleBillingChange}
-                            required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="zipCode">ZIP / Postal Code</Label>
+                          <Label htmlFor="zipCode">Postal Code</Label>
                           <Input
                             id="zipCode"
                             name="zipCode"
                             value={billingInfo.zipCode}
                             onChange={handleBillingChange}
-                            required
                           />
                         </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="country">Country</Label>
-                        <Input
-                          id="country"
-                          name="country"
-                          value={billingInfo.country}
-                          onChange={handleBillingChange}
-                          required
-                        />
                       </div>
                     </div>
                   </div>
@@ -256,89 +244,21 @@ const Checkout = () => {
                   {/* Payment Method */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Payment Method</h3>
-                    <Tabs defaultValue="card">
-                      <TabsList className="grid grid-cols-3 mb-4">
-                        <TabsTrigger value="card">Credit Card</TabsTrigger>
-                        <TabsTrigger value="paypal">PayPal</TabsTrigger>
-                        <TabsTrigger value="apple-pay">Apple Pay</TabsTrigger>
+                    <Tabs defaultValue="airtel">
+                      <TabsList className="w-full">
+                        <TabsTrigger value="airtel" className="flex-1">
+                          <div className="flex items-center justify-center space-x-2">
+                            <span>Airtel Money</span>
+                          </div>
+                        </TabsTrigger>
                       </TabsList>
                       
-                      <TabsContent value="card" className="space-y-4">
-                        <div>
-                          <Label htmlFor="cardNumber">Card Number</Label>
-                          <Input
-                            id="cardNumber"
-                            name="cardNumber"
-                            placeholder="1234 5678 9012 3456"
-                            value={paymentInfo.cardNumber}
-                            onChange={handlePaymentChange}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="cardName">Name on Card</Label>
-                          <Input
-                            id="cardName"
-                            name="cardName"
-                            placeholder="John Smith"
-                            value={paymentInfo.cardName}
-                            onChange={handlePaymentChange}
-                            required
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="expiry">Expiration Date</Label>
-                            <Input
-                              id="expiry"
-                              name="expiry"
-                              placeholder="MM/YY"
-                              value={paymentInfo.expiry}
-                              onChange={handlePaymentChange}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="cvc">CVC</Label>
-                            <Input
-                              id="cvc"
-                              name="cvc"
-                              placeholder="123"
-                              value={paymentInfo.cvc}
-                              onChange={handlePaymentChange}
-                              required
-                            />
-                          </div>
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="paypal">
-                        <div className="flex flex-col items-center justify-center py-8">
-                          <svg className="h-12 w-12 text-blue-500 mb-4" viewBox="0 0 24 24">
-                            <path
-                              fill="currentColor"
-                              d="M19.554 9.488c.121.563.106 1.246-.04 2.051-.582 2.978-2.477 4.466-5.683 4.466h-.442c-.413 0-.752.339-.752.732l-.04.2-.261 1.754-.035.177c-.058.374-.392.652-.77.652H8.376c-.374 0-.608-.304-.547-.676l1.232-7.94c.072-.47.484-.826.965-.826h7.017l.372 1.677c-.325-.12-.753-.213-1.282-.213h-5.104l-.34.356c-.378-.034-.678.311-.735.676l-.634 4.182c-.03.201.044.403.193.557.15.154.36.24.574.24h1.534c2.043 0 3.797-1.022 4.251-3.064.24-1.07.012-1.946-.565-2.563a2.12 2.12 0 0 0-.2-.213l2.4-.031M9.552 7.75c.246-1.246 1.157-1.955 2.894-1.895 1.738.06 2.643.975 2.487 2.22-.156 1.247-1.099 2.032-2.856 1.965-1.758-.067-2.722-1.047-2.525-2.29z"
-                            />
-                          </svg>
-                          <p>You'll be redirected to PayPal to complete your purchase.</p>
-                          <Button className="mt-4 bg-blue-500 hover:bg-blue-600">
-                            Continue with PayPal
-                          </Button>
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="apple-pay">
-                        <div className="flex flex-col items-center justify-center py-8">
-                          <svg className="h-12 w-12 text-black mb-4" viewBox="0 0 24 24">
-                            <path
-                              fill="currentColor"
-                              d="M17.09 12.632c.033 2.337 2.073 3.117 2.093 3.127-.016.055-.32 1.104-1.058 2.184-.635.928-1.299 1.855-2.338 1.875-1.024.02-1.35-.602-2.52-.602-1.172 0-1.538.583-2.512.622-1.008.04-1.779-.999-2.421-1.924-1.318-1.893-2.333-5.344-1.978-7.689.243-1.308 1.124-2.367 2.201-3.008 1.015-.604 2.36-.65 2.943-.552 1.02.135 1.971.577 2.55.577.58 0 1.643-.52 2.82-.73l.732.019c2.292-.244 3.27 1.348 3.22 1.483-.03.078-1.069.81-1.263 2.618zM14.413 4s.212 1.154-.623 2.256c-.74.976-1.937 1.68-2.948 1.562-.144-1.092.386-2.253.975-2.95.67-.772 1.983-1.31 2.596-.868z"
-                            />
-                          </svg>
-                          <p>You'll be redirected to Apple Pay to complete your purchase.</p>
-                          <Button className="mt-4 bg-black hover:bg-gray-800 text-white">
-                            Continue with Apple Pay
-                          </Button>
+                      <TabsContent value="airtel" className="space-y-4 pt-4">
+                        <div className="bg-purple-50 p-4 rounded-md">
+                          <p className="text-sm">
+                            You'll be redirected to Airtel Payment Gateway to complete your payment securely. 
+                            Your transaction is protected with end-to-end encryption.
+                          </p>
                         </div>
                       </TabsContent>
                     </Tabs>
@@ -346,15 +266,26 @@ const Checkout = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-madapet-primary hover:bg-madapet-secondary"
+                    className="w-full bg-purple-700 hover:bg-purple-800"
                     disabled={loading}
                   >
-                    {loading ? "Processing..." : `Pay $${(totalPrice * 1.1).toFixed(2)}`}
+                    {loading ? "Processing..." : `Pay ₹${paymentAmount ? parseFloat(paymentAmount).toFixed(2) : "0.00"}`}
                   </Button>
                   
-                  <p className="text-center text-sm text-gray-500">
-                    Your payment information is secured with 256-bit encryption.
-                  </p>
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-gray-500">
+                      Your payment information is secured with 256-bit encryption.
+                    </p>
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="h-6 w-6 text-gray-400" viewBox="0 0 24 24">
+                        <path
+                          fill="currentColor"
+                          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-6h2v2h-2zm0-8h2v6h-2z"
+                        />
+                      </svg>
+                      <span className="text-xs text-gray-500">Protected by Airtel Payment Gateway</span>
+                    </div>
+                  </div>
                 </form>
               </CardContent>
             </Card>

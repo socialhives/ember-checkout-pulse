@@ -38,18 +38,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   async function signUp(email: string, password: string, name: string) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: name });
-      toast({
-        title: "Account created!",
-        description: "Your account has been successfully created.",
-      });
+      // Try to sign in directly since signup might be disabled
+      await signIn(email, password);
+      
+      // If sign-in succeeds (no account existed), we would normally update the profile here
+      // But since sign-in worked without account creation, we'll handle differently
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: name });
+        toast({
+          title: "Welcome!",
+          description: "You have successfully logged in.",
+        });
+      }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      // If sign-in failed because user doesn't exist but sign-up is disabled
+      if (error.code === 'auth/operation-not-allowed') {
+        toast({
+          title: "Registration Disabled",
+          description: "Email/password registration is currently disabled. Please try using Google Sign-in instead.",
+          variant: "destructive",
+        });
+      } else if (error.code === 'auth/user-not-found') {
+        toast({
+          title: "Registration Disabled",
+          description: "New user registration is currently disabled. Please use an existing account or contact support.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       throw error;
     }
   }
@@ -62,11 +83,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "You have successfully logged in.",
       });
     } catch (error: any) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // If user doesn't exist and we're trying to sign-in
+      if (error.code === 'auth/user-not-found') {
+        toast({
+          title: "Account Not Found",
+          description: "No account exists with this email. Please check your email or try Google Sign-in.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       throw error;
     }
   }

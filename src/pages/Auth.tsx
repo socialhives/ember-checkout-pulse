@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   
   const [loginData, setLoginData] = useState({
     email: "",
@@ -30,6 +33,7 @@ const Auth = () => {
       ...loginData,
       [e.target.name]: e.target.value,
     });
+    setAuthError("");
   };
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,17 +41,20 @@ const Auth = () => {
       ...registerData,
       [e.target.name]: e.target.value,
     });
+    setAuthError("");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError("");
     
     try {
       await signIn(loginData.email, loginData.password);
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      setAuthError(error.message || "Failed to login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +62,10 @@ const Auth = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError("");
     
     if (registerData.password !== registerData.confirmPassword) {
-      alert("Passwords don't match");
+      setAuthError("Passwords don't match");
       return;
     }
     
@@ -66,8 +74,13 @@ const Auth = () => {
     try {
       await signUp(registerData.email, registerData.password, registerData.name);
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
+      if (error.code === 'auth/operation-not-allowed') {
+        setAuthError("Registration with email/password is currently disabled. Please use Google Sign-in instead.");
+      } else {
+        setAuthError(error.message || "Registration failed. Please try another method.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,12 +88,14 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setAuthError("");
     
     try {
       await signInWithGoogle();
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google Sign-in error:", error);
+      setAuthError(error.message || "Google sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -102,6 +117,13 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {authError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{authError}</AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
